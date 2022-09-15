@@ -22,4 +22,19 @@ const favoriteBlog = blogs => {
 	return { title, author, likes };
 };
 
-module.exports = { dummy, totalLikes, favoriteBlog };
+const mostBlogs = blogs => {
+	const blogsByAuthor = {};
+
+	// Get an object where each key is the name of the author and each value is the number of published blogs
+	blogs.forEach(({ author }) => {
+		blogsByAuthor[author] = (blogsByAuthor[author] ?? 0) + 1;
+	});
+
+	// Sort each author by blogs number and keep only the first
+	const authorWithMoreBlogs = Object.entries(blogsByAuthor).sort((a, b) => b[1] - a[1])[0];
+
+	// return as expected object
+	return { author: authorWithMoreBlogs[0], blogs: authorWithMoreBlogs[1] };
+};
+
+module.exports = { dummy, totalLikes, favoriteBlog, mostBlogs };
