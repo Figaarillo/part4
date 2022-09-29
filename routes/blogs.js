@@ -1,16 +1,16 @@
-const { Router } = require('express');
-const { getBlogs, addBlog } = require('../controllers/blogs');
+const { Router } = require('express')
+const { getBlogs, addBlog } = require('../controllers/blogs')
 
-const router = Router();
-
-/**
- * http://localhost:3001/api/blogs
- */
-router.get('/', getBlogs);
+const router = Router()
 
 /**
  * http://localhost:3001/api/blogs
  */
-router.post('/', addBlog);
+router.get('/', getBlogs)
 
-module.exports = router;
+/**
+ * http://localhost:3001/api/blogs
+ */
+router.post('/', addBlog)
+
+module.exports = router
