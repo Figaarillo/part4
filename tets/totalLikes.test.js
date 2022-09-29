@@ -52,7 +52,7 @@ const blogs = [
   },
 ]
 
-describe('total likes', () => {
+describe.skip('total likes', () => {
   test('of empty list is zero', () => {
     const result = totalLikes([])
 

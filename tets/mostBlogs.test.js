@@ -1,7 +1,7 @@
 const blogs = require('../utils/blogsList')
 const { mostBlogs } = require('../utils/list_helper')
 
-describe('Most blogs', () => {
+describe.skip('Most blogs', () => {
   test('from blogs list published by the same author', () => {
     const result = mostBlogs(blogs)
 

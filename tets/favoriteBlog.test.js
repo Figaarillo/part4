@@ -2,7 +2,7 @@ const { favoriteBlog } = require('../utils/list_helper')
 
 const blogs = require('../utils/blogsList')
 
-describe('favorite blog', () => {
+describe.skip('favorite blog', () => {
   test('of a bigger list is the blog with more likes', () => {
     const result = favoriteBlog(blogs)
 
