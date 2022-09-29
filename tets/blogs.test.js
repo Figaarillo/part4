@@ -36,19 +36,46 @@ beforeEach(async () => {
 
 describe('Must be condiderate that', () => {
   test('the blogs are returned as json', async () => {
+    // check that response code is 200 and content type is 'application json'
     await api
       .get('/api/blogs')
       .expect(200)
       .expect('Content-Type', /application\/json/)
   })
 
-  test('The identification property is named id', async () => {
+  test('the identification property is named id', async () => {
     const response = await api.get('/api/blogs')
 
     const blogs = response.body
 
-    expect(blogs[0].id).not.toBe(undefined)
-    expect(blogs[1].id).not.toBe(undefined)
+    // check that the identification property is not undefined for all blogs.
+    blogs.map(({ id }) => expect(id).not.toBe(undefined))
+  })
+
+  test('a valid note can be added', async () => {
+    const newBlog = {
+      title: 'Canonical string reduction',
+      author: 'Edsger W. Dijkstra',
+      url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
+      likes: 12,
+    }
+
+    // check that when adding a new blog, the response code is 201
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const response = await api.get('/api/blogs')
+
+    const blogs = response.body
+
+    // check that when adding a new blog, the lenght is initialBlogs length + 1
+    expect(blogs).toHaveLength(initialBlogs.length + 1)
+
+    // check that when adding a new blog, the url of the last item in the database is the same as the url of the new blog
+    expect(blogs.pop().url).toEqual(newBlog.url)
   })
 })
 

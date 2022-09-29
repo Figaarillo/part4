@@ -5,6 +5,11 @@ const getBlogs = async (_, res) => {
   return res.json(blogs)
 }
 
+/**
+ *  Add new blog and save it to the database.
+ * @param {*} req.body = { title, author, url, likes}
+ * @param {*} res saved blogs
+ */
 const addBlog = (req, res) => {
   const blog = req.body
 
