@@ -77,6 +77,21 @@ describe('Must be condiderate that', () => {
     // check that when adding a new blog, the url of the last item in the database is the same as the url of the new blog
     expect(blogs.pop().url).toEqual(newBlog.url)
   })
+
+  test('if a blog is added without the likes property, it will have the value 0', async () => {
+    const newBlog = {
+      title: 'First class tests',
+      author: 'Robert C. Martin',
+      url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
+    }
+
+    const response = await api.post('/api/blogs').send(newBlog)
+
+    const blog = response.body
+
+    // check that the likes property is 0
+    expect(blog.likes).toBe(0)
+  })
 })
 
 afterAll(() => {

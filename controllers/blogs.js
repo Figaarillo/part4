@@ -1,4 +1,5 @@
 const Blog = require('../model/blog')
+const checkProperties = require('../utils/checkProperties')
 
 const getBlogs = async (_, res) => {
   const blogs = await Blog.find({})
@@ -12,6 +13,8 @@ const getBlogs = async (_, res) => {
  */
 const addBlog = (req, res) => {
   const blog = req.body
+
+  checkProperties(blog)
 
   const newBlog = new Blog(blog)
 
