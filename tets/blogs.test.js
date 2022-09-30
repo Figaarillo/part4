@@ -92,6 +92,17 @@ describe('Must be condiderate that', () => {
     // check that the likes property is 0
     expect(blog.likes).toBe(0)
   })
+
+  test('if a blog is added without title of url property, it will returned status code 400', async () => {
+    const newBlog = {
+      author: 'Robert C. Martin',
+      likes: 20,
+    }
+
+    const response = await api.post('/api/blogs').send(newBlog)
+
+    expect(response.status).toBe(400)
+  })
 })
 
 afterAll(() => {

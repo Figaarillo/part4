@@ -1,5 +1,6 @@
 const Blog = require('../model/blog')
 const checkProperties = require('../utils/checkProperties')
+const handleHTTPError = require('../utils/handleHTTPError')
 
 const getBlogs = async (_, res) => {
   const blogs = await Blog.find({})
@@ -12,16 +13,20 @@ const getBlogs = async (_, res) => {
  * @param {*} res saved blogs
  */
 const addBlog = (req, res) => {
-  const blog = req.body
+  try {
+    const blog = req.body
 
-  checkProperties(blog)
+    checkProperties(blog)
 
-  const newBlog = new Blog(blog)
+    const newBlog = new Blog(blog)
 
-  newBlog.save().then((result) => {
-    res.status(201)
-    return res.json(result)
-  })
+    newBlog.save().then((result) => {
+      res.status(201)
+      return res.json(result)
+    })
+  } catch (error) {
+    handleHTTPError(res, error.message)
+  }
 }
 
 module.exports = { getBlogs, addBlog }
