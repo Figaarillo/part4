@@ -2,39 +2,22 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../model/blog')
+const helper = require('./test_helper')
 
 const api = supertest(app)
 
-const initialBlogs = [
-  {
-    _id: '5a422a851b54a676234d17f7',
-    title: 'React patterns',
-    author: 'Michael Chan',
-    url: 'https://reactpatterns.com/',
-    likes: 7,
-    __v: 0,
-  },
-  {
-    _id: '5a422aa71b54a676234d17f8',
-    title: 'Go To Statement Considered Harmful',
-    author: 'Edsger W. Dijkstra',
-    url: 'http://www.u.arizona.edu/~rubinson/copyright_violations/Go_To_Considered_Harmful.html',
-    likes: 5,
-    __v: 0,
-  },
-]
+const initialBlogs = helper.initialBlogs
 
 beforeEach(async () => {
   await Blog.deleteMany({})
 
-  const blog1 = new Blog(initialBlogs[0])
-  await blog1.save()
-
-  const blog2 = new Blog(initialBlogs[1])
-  await blog2.save()
+  for (const blog of initialBlogs) {
+    const newBlog = new Blog(blog)
+    await newBlog.save()
+  }
 })
 
-describe('Must be condiderate that', () => {
+describe('when there is initially some notes saved', () => {
   test('the blogs are returned as json', async () => {
     // check that response code is 200 and content type is 'application json'
     await api
@@ -43,6 +26,17 @@ describe('Must be condiderate that', () => {
       .expect('Content-Type', /application\/json/)
   })
 
+  test('all notes are returned', async () => {
+    const response = await api.get('/api/blogs')
+
+    const blogs = response.body
+
+    // check that the number of entries is correct
+    expect(blogs).toHaveLength(initialBlogs.length)
+  })
+})
+
+describe('blog properties are correct when', () => {
   test('the identification property is named id', async () => {
     const response = await api.get('/api/blogs')
 
@@ -51,7 +45,9 @@ describe('Must be condiderate that', () => {
     // check that the identification property is not undefined for all blogs.
     blogs.map(({ id }) => expect(id).not.toBe(undefined))
   })
+})
 
+describe('when a new blog is added', () => {
   test('a valid note can be added', async () => {
     const newBlog = {
       title: 'Canonical string reduction',
@@ -78,7 +74,7 @@ describe('Must be condiderate that', () => {
     expect(blogs.pop().url).toEqual(newBlog.url)
   })
 
-  test('if a blog is added without the likes property, it will have the value 0', async () => {
+  test('if added without the likes property, it is set to 0', async () => {
     const newBlog = {
       title: 'First class tests',
       author: 'Robert C. Martin',
@@ -93,7 +89,7 @@ describe('Must be condiderate that', () => {
     expect(blog.likes).toBe(0)
   })
 
-  test('if a blog is added without title of url property, it will returned status code 400', async () => {
+  test('fails with status code 400 if data invalid', async () => {
     const newBlog = {
       author: 'Robert C. Martin',
       likes: 20,
@@ -102,6 +98,25 @@ describe('Must be condiderate that', () => {
     const response = await api.post('/api/blogs').send(newBlog)
 
     expect(response.status).toBe(400)
+  })
+})
+
+describe('deletion of a note', () => {
+  test('succes with status 204', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToDelete = blogsAtStart[0]
+
+    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+
+    const blogsAtEnd = await helper.blogsInDb()
+
+    // check that the number of blogs has decreased
+    expect(blogsAtEnd).toHaveLength(initialBlogs.length - 1)
+
+    const blogs = blogsAtEnd.map((blog) => blog.url)
+
+    // check that the url of the deleted blog is not contained in the database
+    expect(blogs).not.toContain(blogToDelete.url)
   })
 })
 
