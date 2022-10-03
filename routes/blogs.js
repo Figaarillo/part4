@@ -1,5 +1,10 @@
 const { Router } = require('express')
-const { getBlogs, addBlog, deleteBlog } = require('../controllers/blogs')
+const {
+  getBlogs,
+  addBlog,
+  deleteBlog,
+  updateBlog,
+} = require('../controllers/blogs')
 
 const router = Router()
 
@@ -17,5 +22,10 @@ router.post('/', addBlog)
  * http://localhost:3001/api/blogs/id
  */
 router.delete('/:id', deleteBlog)
+
+/**
+ * http://localhost:3001/api/blogs/id
+ */
+router.patch('/:id', updateBlog)
 
 module.exports = router

@@ -6,7 +6,7 @@ const logger = require('../utils/logger')
 const getBlogs = async (_, res) => {
   const blogs = await Blog.find({})
 
-  return res.json(blogs)
+  return res.json(blogs).end()
 }
 
 /**
@@ -26,7 +26,7 @@ const addBlog = async (req, res) => {
 
     res.status(201)
 
-    return res.json(result)
+    return res.json(result).end()
   } catch (error) {
     handleHTTPError(res, error.message)
     logger.error(`❗❗❗ Error: ${error.message}`)
@@ -46,4 +46,32 @@ const deleteBlog = async (req, res) => {
   }
 }
 
-module.exports = { getBlogs, addBlog, deleteBlog }
+const updateBlog = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    let { likes } = req.body
+
+    likes = Number(likes)
+
+    if (!likes) throw new Error('field cannot be updated, invalid likes field')
+
+    likes = Math.round(likes)
+
+    if (likes < 0)
+      throw new Error('field cannot be updated, invalid likes field')
+
+    const blogInDatabase = await Blog.findById(id)
+
+    blogInDatabase.likes = likes
+
+    blogInDatabase.save()
+
+    return res.send(blogInDatabase).end()
+  } catch (error) {
+    handleHTTPError(res, 'Error updating blog')
+    logger.error(error.message)
+  }
+}
+
+module.exports = { getBlogs, addBlog, deleteBlog, updateBlog }

@@ -11,6 +11,7 @@ const initialBlogs = helper.initialBlogs
 beforeEach(async () => {
   await Blog.deleteMany({})
 
+  // with for-of you gain more control, but lose speed. With promise-all you gain speed but lose control. I prefer for-of.
   for (const blog of initialBlogs) {
     const newBlog = new Blog(blog)
     await newBlog.save()
@@ -101,8 +102,8 @@ describe('when a new blog is added', () => {
   })
 })
 
-describe('deletion of a note', () => {
-  test('succes with status 204', async () => {
+describe('when a note is deleted', () => {
+  test('if exists returns status 204', async () => {
     const blogsAtStart = await helper.blogsInDb()
     const blogToDelete = blogsAtStart[0]
 
@@ -113,10 +114,57 @@ describe('deletion of a note', () => {
     // check that the number of blogs has decreased
     expect(blogsAtEnd).toHaveLength(initialBlogs.length - 1)
 
-    const blogs = blogsAtEnd.map((blog) => blog.url)
+    const deletedBlogUrl = blogsAtEnd.map((blog) => blog.url)
 
     // check that the url of the deleted blog is not contained in the database
-    expect(blogs).not.toContain(blogToDelete.url)
+    expect(deletedBlogUrl).not.toContain(blogToDelete.url)
+  })
+
+  test('that does not exist can not be deleted', async () => {
+    await api.delete('/api/blogs/123456789').expect(400)
+  })
+})
+
+describe('when a blog is updated', () => {
+  test('success if likes field is correct', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToUpdate = blogsAtStart[0]
+
+    const fieldToUpdate = { likes: 10 }
+
+    const response = await api
+      .patch(`/api/blogs/${blogToUpdate.id}`)
+      .send(fieldToUpdate)
+      .expect(200)
+
+    const updatedBlog = response.body
+
+    // check that the likes field has been modified
+    expect(updatedBlog.likes).not.toEqual(blogToUpdate.likes)
+
+    // check that likes field is 10
+    expect(updatedBlog.likes).toBe(10)
+  })
+
+  test('fail if likes is a string or a negative number', async () => {
+    const blogsAtStart = await helper.blogsInDb()
+    const blogToUpdate = blogsAtStart[0]
+
+    const fieldToUpdate = { likes: 'diez' }
+
+    // check that likes field is not string
+    await api
+      .patch(`/api/blogs/${blogToUpdate.id}`)
+      .send(fieldToUpdate)
+      .expect(400)
+
+    fieldToUpdate.likes = -10
+
+    // check that likes field is not negative number
+    await api
+      .patch(`/api/blogs/${blogToUpdate.id}`)
+      .send(fieldToUpdate)
+      .expect(400)
   })
 })
 
