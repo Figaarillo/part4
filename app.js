@@ -3,6 +3,7 @@ const cors = require('cors')
 const morgan = require('morgan')
 const config = require('./utils/config')
 const routeBlogs = require('./routes/blogs')
+const routeUsers = require('./routes/users')
 const dbConnectMongo = require('./database/mongo')
 
 const app = express()
@@ -20,6 +21,8 @@ app.use(
 
 // Routes
 app.use('/api/blogs', routeBlogs)
+
+app.use('/api/users', routeUsers)
 
 // Database connection
 dbConnectMongo(config.MONGODB_URI)

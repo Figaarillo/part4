@@ -18,7 +18,7 @@ beforeEach(async () => {
   }
 })
 
-describe('when there is initially some notes saved', () => {
+describe('when started, there are initially some saved notes', () => {
   test('the blogs are returned as json', async () => {
     // check that response code is 200 and content type is 'application json'
     await api

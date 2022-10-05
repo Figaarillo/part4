@@ -28,7 +28,7 @@ const addBlog = async (req, res) => {
 
     return res.json(result).end()
   } catch (error) {
-    handleHTTPError(res, error.message)
+    handleHTTPError(res, 'Error adding blog')
     logger.error(`❗❗❗ Error: ${error.message}`)
   }
 }
