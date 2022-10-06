@@ -24,27 +24,22 @@ describe('when registering a new user', () => {
       password: 'figapass',
     }
 
-    const response = await api
+    await api
       .post('/api/users')
       .send(newUser)
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
-    const { username, name, passwordHash } = response.body
+    // check that the user was saved successfully
+    const usersAtEnd = await helper.usersInDb()
+    expect(usersAtEnd).toHaveLength(initialUsers.length + 1)
 
-    // check that the username is the one sent
-    expect(username).toContain('figarillo')
-
-    // check that the  name is the one sent
-    expect(name).toContain('axel')
+    const usernames = usersAtEnd.map((user) => user.username)
+    expect(usernames).toContain(newUser.username)
 
     // check that the password is not returned
-    expect(passwordHash).toBe(undefined)
-
-    const { body: users } = await api.get('/api/users').expect(200)
-
-    // check that the user was saved successfully
-    expect(users).toHaveLength(3)
+    const passwords = usersAtEnd.map((user) => user.passwordHash)
+    passwords.forEach((password) => expect(password).toBe(undefined))
   })
 })
 
@@ -76,5 +71,57 @@ describe('when started', () => {
         name: 'Matti Luukkainen',
       },
     ])
+  })
+})
+
+describe('Adding a new user fails', () => {
+  test('if the username or password is not provided', async () => {
+    const newUsers = {
+      username: '',
+      name: 'Axel',
+      password: '',
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUsers)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toContain('username or password are empty')
+  })
+
+  test('if user is already added', async () => {
+    const newUsers = {
+      username: 'hellas',
+      name: 'Arto Hellas',
+      password: 'hellaspassword',
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUsers)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toContain('username to be unique')
+  })
+
+  test('if the username or password are very short', async () => {
+    const newUsers = {
+      username: 'fi',
+      name: 'Axel',
+      password: 'fi',
+    }
+
+    const response = await api
+      .post('/api/users')
+      .send(newUsers)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.error).toContain(
+      'username or password must be at least 3 characters long'
+    )
   })
 })
