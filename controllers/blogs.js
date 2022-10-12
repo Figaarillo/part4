@@ -1,10 +1,11 @@
 const Blog = require('../model/blog')
+const User = require('../model/user')
 const checkProperties = require('../utils/checkProperties')
 const handleHTTPError = require('../utils/handleHTTPError')
 const logger = require('../utils/logger')
 
 const getBlogs = async (_, res) => {
-  const blogs = await Blog.find({})
+  const blogs = await Blog.find({}).populate('user', { username: 1, name: 1 })
 
   return res.json(blogs).end()
 }
@@ -18,15 +19,19 @@ const addBlog = async (req, res) => {
   try {
     const blog = req.body
 
+    const user = await User.findById(blog.userId)
+
     checkProperties(blog)
 
-    const newBlog = new Blog(blog)
+    const newBlog = new Blog({ ...blog, user })
 
-    const result = await newBlog.save()
+    const savedBlog = await newBlog.save()
+    user.blogs = user.blogs.concat(savedBlog._id)
+    await user.save()
 
     res.status(201)
 
-    return res.json(result).end()
+    return res.json(savedBlog).end()
   } catch (error) {
     handleHTTPError(res, 'Error adding blog')
     logger.error(`❗❗❗ Error: ${error.message}`)

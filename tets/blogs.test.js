@@ -2,6 +2,7 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../model/blog')
+const User = require('../model/user')
 const helper = require('./test_helper')
 
 const api = supertest(app)
@@ -50,11 +51,15 @@ describe('blog properties are correct when', () => {
 
 describe('when a new blog is added', () => {
   test('a valid note can be added', async () => {
+    const usersInDB = await helper.usersInDb()
+    const { id: userId } = usersInDB[0] // user: Arto Hellas
+
     const newBlog = {
       title: 'Canonical string reduction',
       author: 'Edsger W. Dijkstra',
       url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
       likes: 12,
+      userId,
     }
 
     // check that when adding a new blog, the response code is 201
@@ -76,17 +81,21 @@ describe('when a new blog is added', () => {
   })
 
   test('if added without the likes property, it is set to 0', async () => {
+    const usersInDB = await helper.usersInDb()
+    const { id: userId } = usersInDB[0] // user: Arto Hellas
+
     const newBlog = {
       title: 'First class tests',
       author: 'Robert C. Martin',
       url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
+      userId,
     }
 
     const response = await api.post('/api/blogs').send(newBlog)
 
     const blog = response.body
 
-    // check that the likes property is 0
+    // check that the likes property is 0 <-
     expect(blog.likes).toBe(0)
   })
 
@@ -165,6 +174,58 @@ describe('when a blog is updated', () => {
       .patch(`/api/blogs/${blogToUpdate.id}`)
       .send(fieldToUpdate)
       .expect(400)
+  })
+})
+
+describe('verify the format of a new blog', () => {
+  beforeEach(async () => {
+    await User.deleteMany({})
+    for (const user of helper.initialUsers) {
+      const newUser = new User(user)
+      await newUser.save()
+    }
+  })
+
+  test('when a new blog is created, it should display its user', async () => {
+    const usersInDB = await helper.usersInDb()
+
+    // user: Arto Hellas
+    const { id: userId } = usersInDB[0]
+
+    const newBlog = {
+      title: 'Microservices and the First Law of Distributed Objects',
+      author: 'Martin Fowler',
+      url: 'http://martinfowler.com/articles/distributed-objects-microservices.html',
+      likes: 0,
+      userId,
+    }
+
+    await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/)
+
+    const { body: blogs } = await api.get('/api/blogs')
+
+    const createdBlog = blogs.pop()
+
+    // check that the format of the blog is correct
+    expect(createdBlog).toMatchObject({
+      title: 'Microservices and the First Law of Distributed Objects',
+      author: 'Martin Fowler',
+      url: 'http://martinfowler.com/articles/distributed-objects-microservices.html',
+      likes: 0,
+      user: {
+        username: 'hellas',
+        name: 'Arto Hellas',
+      },
+    })
+
+    const { body: users } = await api.get('/api/users')
+
+    // check that the blog id in the user is the same as the created blog
+    expect(users[0].blogs[0].id).toEqual(createdBlog.id)
   })
 })
 

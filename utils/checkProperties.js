@@ -10,6 +10,7 @@ const checkProperties = (blog) => {
   if (blog.likes === undefined) {
     return (blog.likes = 0)
   }
+  return blog
 }
 
 module.exports = checkProperties
