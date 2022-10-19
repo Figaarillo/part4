@@ -1,12 +1,12 @@
 const { Router } = require('express')
 const { getUsers, registerUser, loginUser } = require('../controllers/users')
-const validatorRegisterUser = require('../validators/users')
+const validateUserToRegister = require('../middlewares/validateUserToRegister')
 
 const router = Router()
 
 router.get('/', getUsers)
 
-router.post('/register', validatorRegisterUser, registerUser)
+router.post('/register', validateUserToRegister, registerUser)
 
 router.post('/login', loginUser)
 

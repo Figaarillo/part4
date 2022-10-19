@@ -6,4 +6,12 @@ const signToken = async (user) => {
   return sign
 }
 
-module.exports = { signToken }
+const verifyToken = async (token) => {
+  try {
+    return jwt.verify(token, JWT_SECRET)
+  } catch (error) {
+    return null
+  }
+}
+
+module.exports = { signToken, verifyToken }

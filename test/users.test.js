@@ -25,7 +25,7 @@ describe('when registering a new user', () => {
     }
 
     await api
-      .post('/api/users')
+      .post('/api/users/register')
       .send(newUser)
       .expect(201)
       .expect('Content-Type', /application\/json/)
@@ -44,7 +44,7 @@ describe('when registering a new user', () => {
 })
 
 describe('when started', () => {
-  test('there are initially two saved notes', async () => {
+  test('there are initially two saved users', async () => {
     const response = await api
       .get('/api/users')
       .expect(200)
@@ -55,6 +55,7 @@ describe('when started', () => {
     // check that the returned users are two
     expect(users).toHaveLength(2)
   })
+
   test('the returned content must be correct', async () => {
     const response = await api.get('/api/users')
 
@@ -83,7 +84,7 @@ describe('Adding a new user fails', () => {
     }
 
     const response = await api
-      .post('/api/users')
+      .post('/api/users/register')
       .send(newUsers)
       .expect(401)
       .expect('Content-Type', /application\/json/)
@@ -99,7 +100,7 @@ describe('Adding a new user fails', () => {
     }
 
     const response = await api
-      .post('/api/users')
+      .post('/api/users/register')
       .send(newUsers)
       .expect(401)
       .expect('Content-Type', /application\/json/)
@@ -115,7 +116,7 @@ describe('Adding a new user fails', () => {
     }
 
     const response = await api
-      .post('/api/users')
+      .post('/api/users/register')
       .send(newUsers)
       .expect(401)
       .expect('Content-Type', /application\/json/)

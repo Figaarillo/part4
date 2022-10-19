@@ -5,6 +5,7 @@ const config = require('./utils/config')
 const routeBlogs = require('./routes/blogs')
 const routeUsers = require('./routes/users')
 const dbConnectMongo = require('./database/mongo')
+const unknowEndpoint = require('./middlewares/unknowEndpoint')
 
 const app = express()
 
@@ -23,6 +24,8 @@ app.use(
 app.use('/api/blogs', routeBlogs)
 
 app.use('/api/users', routeUsers)
+
+app.use(unknowEndpoint)
 
 // Database connection
 dbConnectMongo(config.MONGODB_URI)

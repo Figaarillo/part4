@@ -1,8 +1,8 @@
 const User = require('../model/user')
-const logger = require('../utils/logger')
 const { encrypt, compare } = require('../utils/handlePassword')
 const handleHTTPError = require('../utils/handleHTTPError')
 const { signToken } = require('../utils/handleJwt')
+const logger = require('../utils/logger')
 
 const getUsers = async (_, res) => {
   try {
@@ -11,9 +11,11 @@ const getUsers = async (_, res) => {
       url: 1,
       likes: 1,
     })
+
     return res.send(users).end()
   } catch (error) {
-    logger.error(error)
+    handleHTTPError(res, 'error getting users')
+    logger.error(`❗❗❗ Error: ${error.message}`)
   }
 }
 
@@ -36,7 +38,7 @@ const registerUser = async (req, res) => {
     return res.json(savedUser).end()
   } catch (error) {
     handleHTTPError(res, 'error registering user', 401)
-    logger.error(error)
+    logger.error(`❗❗❗ Error: ${error.message}`)
   }
 }
 
@@ -71,7 +73,7 @@ const loginUser = async (req, res) => {
     return res.send({ data }).end()
   } catch (error) {
     handleHTTPError(res, 'error login user')
-    logger.error(error)
+    logger.error(`❗❗❗ Error: ${error.message}`)
   }
 }
 

@@ -5,27 +5,16 @@ const {
   deleteBlog,
   updateBlog,
 } = require('../controllers/blogs')
+const tokenExtractor = require('../middlewares/tokenExtractor')
 
 const router = Router()
 
-/**
- * http://localhost:3001/api/blogs
- */
-router.get('/', getBlogs)
+router.get('/', tokenExtractor, getBlogs)
 
-/**
- * http://localhost:3001/api/blogs
- */
-router.post('/', addBlog)
+router.post('/', tokenExtractor, addBlog)
 
-/**
- * http://localhost:3001/api/blogs/id
- */
-router.delete('/:id', deleteBlog)
+router.delete('/:id', tokenExtractor, deleteBlog)
 
-/**
- * http://localhost:3001/api/blogs/id
- */
-router.patch('/:id', updateBlog)
+router.patch('/:id', tokenExtractor, updateBlog)
 
 module.exports = router

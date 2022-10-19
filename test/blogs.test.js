@@ -2,7 +2,6 @@ const mongoose = require('mongoose')
 const supertest = require('supertest')
 const app = require('../app')
 const Blog = require('../model/blog')
-const User = require('../model/user')
 const helper = require('./test_helper')
 
 const api = supertest(app)
@@ -12,24 +11,35 @@ const initialBlogs = helper.initialBlogs
 beforeEach(async () => {
   await Blog.deleteMany({})
 
-  // with for-of you gain more control, but lose speed. With promise-all you gain speed but lose control. I prefer for-of.
   for (const blog of initialBlogs) {
-    const newBlog = new Blog(blog)
+    const users = await helper.usersInDb()
+
+    const { id: user } = users[0]
+
+    const newBlog = new Blog({ ...blog, user })
+
     await newBlog.save()
   }
 })
 
-describe('when started, there are initially some saved notes', () => {
+describe('when started, there are initially some saved blogs', () => {
   test('the blogs are returned as json', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
     // check that response code is 200 and content type is 'application json'
     await api
       .get('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
   })
 
-  test('all notes are returned', async () => {
-    const response = await api.get('/api/blogs')
+  test('all blogs are returned', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
+    const response = await api
+      .get('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
 
     const blogs = response.body
 
@@ -39,8 +49,12 @@ describe('when started, there are initially some saved notes', () => {
 })
 
 describe('blog properties are correct when', () => {
-  test('the identification property is named id', async () => {
-    const response = await api.get('/api/blogs')
+  test('the identification property is named "id"', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
+    const response = await api
+      .get('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
 
     const blogs = response.body
 
@@ -50,26 +64,27 @@ describe('blog properties are correct when', () => {
 })
 
 describe('when a new blog is added', () => {
-  test('a valid note can be added', async () => {
-    const usersInDB = await helper.usersInDb()
-    const { id: userId } = usersInDB[0] // user: Arto Hellas
+  test('a valid blog can be added', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
 
     const newBlog = {
       title: 'Canonical string reduction',
       author: 'Edsger W. Dijkstra',
       url: 'http://www.cs.utexas.edu/~EWD/transcriptions/EWD08xx/EWD808.html',
       likes: 12,
-      userId,
     }
 
     // check that when adding a new blog, the response code is 201
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
-    const response = await api.get('/api/blogs')
+    const response = await api
+      .get('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
 
     const blogs = response.body
 
@@ -81,42 +96,63 @@ describe('when a new blog is added', () => {
   })
 
   test('if added without the likes property, it is set to 0', async () => {
-    const usersInDB = await helper.usersInDb()
-    const { id: userId } = usersInDB[0] // user: Arto Hellas
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
 
     const newBlog = {
       title: 'First class tests',
       author: 'Robert C. Martin',
       url: 'http://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.htmll',
-      userId,
     }
 
-    const response = await api.post('/api/blogs').send(newBlog)
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
 
     const blog = response.body
 
-    // check that the likes property is 0 <-
+    // check that the likes property is 0
     expect(blog.likes).toBe(0)
   })
 
   test('fails with status code 400 if data invalid', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
     const newBlog = {
       author: 'Robert C. Martin',
       likes: 20,
     }
 
-    const response = await api.post('/api/blogs').send(newBlog)
+    const response = await api
+      .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
+      .send(newBlog)
 
+    // check that status code is correct when send a blog without required properties
     expect(response.status).toBe(400)
   })
 })
 
-describe('when a note is deleted', () => {
-  test('if exists returns status 204', async () => {
+describe('a blog can be deleted', () => {
+  test('can be deleted only by its creator', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
     const blogsAtStart = await helper.blogsInDb()
     const blogToDelete = blogsAtStart[0]
 
-    await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204)
+    // check that the user can delete his blog
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(204)
+
+    const token2 = await helper.getToken(api, 'mluukkai', 'mluukkaipass')
+
+    // check that another user cannot delete another user's blog
+    await api
+      .delete(`/api/blogs/${blogToDelete.id}`)
+      .set('Authorization', `Bearer ${token2}`)
+      .expect(403)
 
     const blogsAtEnd = await helper.blogsInDb()
 
@@ -130,12 +166,19 @@ describe('when a note is deleted', () => {
   })
 
   test('that does not exist can not be deleted', async () => {
-    await api.delete('/api/blogs/123456789').expect(400)
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
+    await api
+      .delete('/api/blogs/123456789')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400)
   })
 })
 
 describe('when a blog is updated', () => {
   test('success if likes field is correct', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
     const blogsAtStart = await helper.blogsInDb()
     const blogToUpdate = blogsAtStart[0]
 
@@ -143,6 +186,7 @@ describe('when a blog is updated', () => {
 
     const response = await api
       .patch(`/api/blogs/${blogToUpdate.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(fieldToUpdate)
       .expect(200)
 
@@ -156,6 +200,8 @@ describe('when a blog is updated', () => {
   })
 
   test('fail if likes is a string or a negative number', async () => {
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
+
     const blogsAtStart = await helper.blogsInDb()
     const blogToUpdate = blogsAtStart[0]
 
@@ -164,6 +210,7 @@ describe('when a blog is updated', () => {
     // check that likes field is not string
     await api
       .patch(`/api/blogs/${blogToUpdate.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(fieldToUpdate)
       .expect(400)
 
@@ -172,41 +219,33 @@ describe('when a blog is updated', () => {
     // check that likes field is not negative number
     await api
       .patch(`/api/blogs/${blogToUpdate.id}`)
+      .set('Authorization', `Bearer ${token}`)
       .send(fieldToUpdate)
       .expect(400)
   })
 })
 
 describe('verify the format of a new blog', () => {
-  beforeEach(async () => {
-    await User.deleteMany({})
-    for (const user of helper.initialUsers) {
-      const newUser = new User(user)
-      await newUser.save()
-    }
-  })
-
   test('when a new blog is created, it should display its user', async () => {
-    const usersInDB = await helper.usersInDb()
-
-    // user: Arto Hellas
-    const { id: userId } = usersInDB[0]
+    const token = await helper.getToken(api, 'hellas', 'hellaspass')
 
     const newBlog = {
       title: 'Microservices and the First Law of Distributed Objects',
       author: 'Martin Fowler',
       url: 'http://martinfowler.com/articles/distributed-objects-microservices.html',
       likes: 0,
-      userId,
     }
 
     await api
       .post('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .send(newBlog)
       .expect(201)
       .expect('Content-Type', /application\/json/)
 
-    const { body: blogs } = await api.get('/api/blogs')
+    const { body: blogs } = await api
+      .get('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
 
     const createdBlog = blogs.pop()
 

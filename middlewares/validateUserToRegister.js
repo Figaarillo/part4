@@ -3,7 +3,7 @@ const User = require('../model/user')
 /**
  * verifies that the user is correct. If something is not fulfilled, it returns an error code and a message. If there is no error, it continues
  */
-const validatorRegisterUser = async (req, res, next) => {
+const validateUserToRegister = async (req, res, next) => {
   const { username, password } = req.body
 
   // validate that username and password are not empty
@@ -35,4 +35,4 @@ const validatorRegisterUser = async (req, res, next) => {
   next()
 }
 
-module.exports = validatorRegisterUser
+module.exports = validateUserToRegister
